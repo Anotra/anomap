@@ -37,6 +37,15 @@ anomap_create(size_t key_size, size_t val_size,
   return NULL;
 }
 
+void
+anomap_destroy(struct anomap *map) {
+  free(map->keys.arr);
+  free(map->vals.arr);
+  free(map->map.arr);
+  memset(map, 0, sizeof *map);
+  free(map);
+}
+
 size_t
 anomap_length(struct anomap *map) {
   return map->map.len;
