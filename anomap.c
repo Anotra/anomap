@@ -51,6 +51,11 @@ anomap_length(struct anomap *map) {
   return map->map.len;
 }
 
+void anomap_clear(struct anomap *map) {
+  map->map.len = 0;
+  map->map.highest = 0;
+}
+
 static bool
 _anomap_find(struct anomap *map, void *key, size_t *position) {
   size_t lo = 0, mid, hi = map->map.len;
