@@ -183,3 +183,41 @@ anomap_do(struct anomap *map, enum anomap_operation operation,
   }
   return result;
 }
+
+bool
+anomap_copy_range(struct anomap *map, size_t index, size_t count,
+                  void *keys, void *vals)
+{
+  if (index + count > map->map.len) return false;
+  if (keys || vals) {
+    for (size_t i = 0; i < count; i++, index++) {
+      if (keys) memcpy(((char *)keys) + map->keys.size * i,
+                        map->keys.arr + map->keys.size * map->map.arr[index],
+                        map->keys.size);
+      if (vals) memcpy(((char *)keys) + map->vals.size * i,
+                        map->vals.arr + map->vals.size * map->map.arr[index],
+                        map->vals.size);
+    }
+  }
+  return true;
+}
+
+bool
+anomap_delete_range(struct anomap *map, size_t index, size_t count,
+                    void *keys, void *vals)
+{
+  if (!anomap_copy_range(map, index, count, keys, vals))
+    return false;
+  while (count) {
+    unsigned tmp[4096];
+    size_t block = count > 4096 ? 4096 : count;
+    size_t copy_size = block * sizeof *map->map.arr;
+    memcpy(tmp, map->map.arr + index, copy_size);
+    memmove(map->map.arr + index, map->map.arr + index + block, (
+            map->map.len - index - block) * sizeof *map->map.arr);
+    map->map.len -= block;
+    memcpy(map->map.arr + map->map.len, tmp, copy_size);
+    count -= block;
+  }
+  return true;
+}
