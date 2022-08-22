@@ -27,7 +27,7 @@ void anomap_destroy(struct anomap *map);
 size_t anomap_length(struct anomap *map);
 void anomap_clear(struct anomap *map);
 
-bool anomap_index_of(struct anomap *map, size_t *index, void *key);
+bool anomap_index_of(struct anomap *map, void *key, size_t *index);
 bool anomap_at_index(struct anomap *map, size_t index, void *key, void *val);
 
 enum anomap_operation anomap_do(struct anomap *map,

@@ -56,8 +56,8 @@ void anomap_clear(struct anomap *map) {
   map->map.highest = 0;
 }
 
-static bool
-_anomap_find(struct anomap *map, void *key, size_t *position) {
+bool
+anomap_index_of(struct anomap *map, void *key, size_t *position) {
   size_t lo = 0, mid, hi = map->map.len;
   while (lo < hi) {
     mid = (lo + hi) / 2;
@@ -67,14 +67,6 @@ _anomap_find(struct anomap *map, void *key, size_t *position) {
     else hi = mid;
   }
   return *position = lo, false;
-}
-
-bool
-anomap_index_of(struct anomap *map, size_t *index, void *key) {
-  size_t mpos = 0;
-  if (!_anomap_find(map, key, &mpos))
-    return false;
-  return *index = mpos, true;
 }
 
 bool
@@ -120,7 +112,7 @@ anomap_do(struct anomap *map, enum anomap_operation operation,
 {
   enum anomap_operation result = 0;
   size_t mpos = 0;
-  if (!_anomap_find(map, key, &mpos)) {
+  if (!anomap_index_of(map, key, &mpos)) {
     if (~operation & anomap_insert)
       return 0;
     if (!_anomap_ensure_capacity(map, map->map.len + 1))
