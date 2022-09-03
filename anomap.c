@@ -186,7 +186,7 @@ anomap_copy_range(struct anomap *map, size_t index, size_t count,
       if (keys) memcpy(((char *)keys) + map->keys.size * i,
                         map->keys.arr + map->keys.size * map->map.arr[index],
                         map->keys.size);
-      if (vals) memcpy(((char *)keys) + map->vals.size * i,
+      if (vals) memcpy(((char *)vals) + map->vals.size * i,
                         map->vals.arr + map->vals.size * map->map.arr[index],
                         map->vals.size);
     }
