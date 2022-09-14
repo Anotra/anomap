@@ -83,9 +83,16 @@ void anomap_clear(struct anomap *map) {
 bool
 anomap_index_of(struct anomap *map, void *key, size_t *position) {
   size_t lo = 0, mid, hi = map->map.len;
+  const void *const keys = map->keys.arr;
+  const size_t key_size = map->keys.size;
+
+  if (map->map.len >= 0x10 // support fast appending
+   && map->cmp(key, keys + key_size * map->map.arr[map->map.len - 1]) > 0)
+    return *position = map->map.len, false;
+
   while (lo < hi) {
-    mid = (lo + hi) / 2;
-    int r = map->cmp(key, map->keys.arr + map->keys.size * map->map.arr[mid]);
+    mid = lo + (hi - lo) / 2;
+    int r = map->cmp(key, keys + key_size * map->map.arr[mid]);
     if (r == 0) return *position = mid, true;
     if (r > 0) lo = mid + 1;
     else hi = mid;
