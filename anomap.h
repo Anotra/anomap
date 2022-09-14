@@ -10,6 +10,13 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define ANOMAP_DECLARE_COMPARE_FUNCTION(function_name, data_type)             \
+  static int                                                                  \
+  function_name(const void *a, const void *b) {                               \
+    if (*(data_type *)a == *(data_type *)b) return 0;                         \
+    return *(data_type *)a > *(data_type *)b ? 1 : -1;                        \
+  }
+
 enum anomap_operation {
   anomap_insert = 1 << 0,
   anomap_update = 1 << 1,
