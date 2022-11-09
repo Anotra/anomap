@@ -145,7 +145,7 @@ anomap_do(struct anomap *map, enum anomap_operation operation,
   enum anomap_operation result = 0;
   size_t mpos = 0;
   if (!anomap_index_of(map, key, &mpos)) {
-    if (~operation & anomap_insert)
+    if (!(operation & anomap_insert))
       return 0;
     if (!_anomap_ensure_capacity(map, map->map.len + 1))
       return 0;
@@ -191,8 +191,7 @@ anomap_do(struct anomap *map, enum anomap_operation operation,
       char tmp[0x1000];
       char *a = val_to_update;
       char *b = val;
-      size_t amount_left = map->vals.size;
-      for (size_t i = 0; amount_left; i += sizeof tmp) {
+      for (size_t amount_left = map->vals.size; amount_left;) {
         size_t current_block = amount_left;
         if (current_block > sizeof tmp) current_block = sizeof tmp;
         memcpy(tmp, a, current_block);
