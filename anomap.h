@@ -32,6 +32,7 @@ struct anomap *anomap_create(size_t key_size, size_t val_size,
 void anomap_destroy(struct anomap *map);
 
 struct anomap_item_changed {
+  struct anomap *map;
   void *data;
   enum anomap_operation op;
   void *key;
@@ -41,8 +42,7 @@ struct anomap_item_changed {
   } val;
 };
 
-typedef void anomap_on_item_changed(
-  struct anomap *map, struct anomap_item_changed *item_changed);
+typedef void anomap_on_item_changed(const struct anomap_item_changed *ev);
 
 void anomap_set_on_item_changed(
   struct anomap *map, anomap_on_item_changed *on_changed, void *data);

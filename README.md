@@ -12,7 +12,7 @@ sorted key/value storage for C99
 ANOMAP_DECLARE_COMPARE_FUNCTION(_cmp_int, int)
 
 static void
-on_changed(struct anomap *map, struct anomap_item_changed *ev) {
+on_changed(const struct anomap_item_changed *ev) {
   if (ev->op & anomap_insert)
     printf("inserted [%i] = '%s'\n", *(int *)ev->key, *(char **)ev->val.now);
 

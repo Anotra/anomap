@@ -68,8 +68,9 @@ void anomap_clear(struct anomap *map) {
   for (size_t i = 0; i < map->map.len; i++) {
     if (!map->on_changed.cb) break;
     unsigned pos = map->map.arr[i];
-    map->on_changed.cb(map,
+    map->on_changed.cb(
       &(struct anomap_item_changed) {
+        .map = map,
         .data = map->on_changed.data,
         .op = anomap_delete,
         .key = map->keys.arr + map->keys.size * pos,
@@ -164,8 +165,9 @@ anomap_do(struct anomap *map, enum anomap_operation operation,
     map->map.len++;
     result |= anomap_insert;
     if (map->on_changed.cb)
-      map->on_changed.cb(map,
+      map->on_changed.cb(
         &(struct anomap_item_changed) {
+          .map = map,
           .data = map->on_changed.data,
           .op = anomap_insert,
           .key = key,
@@ -178,8 +180,9 @@ anomap_do(struct anomap *map, enum anomap_operation operation,
     result |= anomap_update;
     void *const val_to_update = map->vals.arr + val_size * pos;
     if (map->on_changed.cb)
-      map->on_changed.cb(map,
+      map->on_changed.cb(
         &(struct anomap_item_changed) {
+          .map = map,
           .data = map->on_changed.data,
           .op = anomap_update,
           .key = key,
@@ -216,8 +219,9 @@ anomap_do(struct anomap *map, enum anomap_operation operation,
     result |= anomap_delete;
     void *const deleted_item = map->vals.arr + val_size * pos;
     if (map->on_changed.cb)
-      map->on_changed.cb(map,
+      map->on_changed.cb(
         &(struct anomap_item_changed) {
+          .map = map,
           .data = map->on_changed.data,
           .op = anomap_delete,
           .key = key,
@@ -266,8 +270,9 @@ anomap_delete_range(struct anomap *map, size_t from_index, size_t to_index,
   for (size_t i = from_index;; going_up ? i++ : i--) {
     if (!map->on_changed.cb) break;
     unsigned pos = map->map.arr[i];
-    map->on_changed.cb(map,
+    map->on_changed.cb(
       &(struct anomap_item_changed) {
+        .map = map,
         .data = map->on_changed.data,
         .op = anomap_delete,
         .key = map->keys.arr + map->keys.size * pos,
