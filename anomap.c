@@ -245,8 +245,8 @@ anomap_copy_range(struct anomap *map, size_t from_index, size_t to_index,
   if (keys || vals) {
     const size_t key_size = map->keys.size;
     const size_t val_size = map->vals.size;
-    bool going_up = from_index <= to_index;
-    for (size_t i = 0;; i++, going_up ? from_index++ : from_index--) {
+    const int next = from_index <= to_index ? 1 : -1;
+    for (size_t i = 0;; i++, from_index += next) {
       unsigned pos = map->map.arr[from_index];
       if (keys) memcpy(((char *)keys) + key_size * i,
                         map->keys.arr + key_size * pos,
@@ -266,8 +266,8 @@ anomap_delete_range(struct anomap *map, size_t from_index, size_t to_index,
 {
   size_t count = anomap_copy_range(map, from_index, to_index, keys, vals);
   if (!count) return 0;
-  bool going_up = from_index <= to_index;
-  for (size_t i = from_index;; going_up ? i++ : i--) {
+  const int next = from_index <= to_index ? 1 : -1;
+  for (size_t i = from_index;; i += next) {
     if (!map->on_changed.cb) break;
     unsigned pos = map->map.arr[i];
     map->on_changed.cb(
