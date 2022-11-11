@@ -86,6 +86,12 @@ void anomap_clear(struct anomap *map) {
 }
 
 bool
+anomap_contains(struct anomap *map, void *key) {
+  size_t position;
+  return anomap_index_of(map, key, &position);
+}
+
+bool
 anomap_index_of(struct anomap *map, void *key, size_t *position) {
   size_t lo = 0, mid, hi = map->map.len;
   const char *const keys = map->keys.arr;
