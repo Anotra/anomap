@@ -17,6 +17,10 @@
     return *(data_type *)a > *(data_type *)b ? 1 : -1;                        \
   }
 
+enum anomap_options {
+  anomap_reverse_order = 1,
+};
+
 enum anomap_operation {
   anomap_insert = 1 << 0,
   anomap_update = 1 << 1,
@@ -28,7 +32,8 @@ enum anomap_operation {
 struct anomap;
 
 struct anomap *anomap_create(size_t key_size, size_t val_size,
-                             int (*cmp)(const void *, const void *));
+                             int (*cmp)(const void *, const void *),
+                             enum anomap_options options);
 void anomap_destroy(struct anomap *map);
 
 struct anomap_item_changed {

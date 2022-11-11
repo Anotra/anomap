@@ -9,6 +9,7 @@
 
 struct anomap {
   int (*cmp)(const void *, const void *);
+  enum anomap_options options;
   struct {
     anomap_on_item_changed *cb;
     void *data;
@@ -30,9 +31,12 @@ struct anomap {
 
 struct anomap *
 anomap_create(size_t key_size, size_t val_size,
-              int (*cmp)(const void *, const void *)) {
+              int (*cmp)(const void *, const void *),
+              enum anomap_options options)
+{
   struct anomap *map = calloc(1, sizeof *map);
   if (map) {
+    map->options = options;
     map->cmp = cmp;
     map->keys.size = key_size;
     map->vals.size = val_size;
@@ -86,18 +90,31 @@ anomap_index_of(struct anomap *map, void *key, size_t *position) {
   size_t lo = 0, mid, hi = map->map.len;
   const char *const keys = map->keys.arr;
   const size_t key_size = map->keys.size;
+  int result;
 
-  if (map->map.len >= 0x10 // support fast appending
-   && map->cmp(key, keys + key_size * map->map.arr[map->map.len - 1]) > 0)
-    return *position = map->map.len, false;
+  if (0 == map->map.len) goto on_empty;
+  result = map->cmp(key, keys + key_size * map->map.arr[map->map.len - 1]);
 
-  while (lo < hi) {
-    mid = lo + (hi - lo) / 2;
-    int r = map->cmp(key, keys + key_size * map->map.arr[mid]);
-    if (r == 0) return *position = mid, true;
-    if (r > 0) lo = mid + 1;
-    else hi = mid;
+# define BINARY_SEARCH(cmp_operator)                                          \
+  if (result cmp_operator##= 0)                                               \
+    return *position = map->map.len, result == 0;                             \
+  while (lo < hi) {                                                           \
+    mid = lo + (hi - lo) / 2;                                                 \
+    result = map->cmp(key, keys + key_size * map->map.arr[mid]);              \
+    if (result == 0) return *position = mid, true;                            \
+    if (result cmp_operator 0) lo = mid + 1;                                  \
+    else hi = mid;                                                            \
   }
+  
+  if (map->options & anomap_reverse_order) {
+    BINARY_SEARCH(<);
+  } else {
+    BINARY_SEARCH(>);
+  }
+
+# undef BINARY_SEARCH
+
+  on_empty:
   return *position = lo, false;
 }
 

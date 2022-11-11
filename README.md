@@ -34,7 +34,8 @@ int main() {
     struct anomap *map = anomap_create(
         sizeof(int),    //< key_size
         sizeof(char *), //< val_size
-        _cmp_int        //< cmp_func
+        _cmp_int,       //< cmp_func
+        0               //< options
       );
 
     // we don't need this, but register for events
