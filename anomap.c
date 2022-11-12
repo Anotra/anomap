@@ -102,8 +102,8 @@ anomap_index_of(struct anomap *map, void *key, size_t *position) {
   result = map->cmp(key, keys + key_size * map->map.arr[map->map.len - 1]);
 
 # define BINARY_SEARCH(cmp_operator)                                          \
-  if (result cmp_operator##= 0)                                               \
-    return *position = map->map.len, result == 0;                             \
+  if (result cmp_operator 0)                                                  \
+    return *position = map->map.len, false;                                   \
   while (lo < hi) {                                                           \
     mid = lo + (hi - lo) / 2;                                                 \
     result = map->cmp(key, keys + key_size * map->map.arr[mid]);              \
