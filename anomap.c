@@ -319,3 +319,15 @@ anomap_delete_range(struct anomap *map, size_t from_index, size_t to_index,
   }
   return count;
 }
+
+void
+anomap_foreach(struct anomap *map, anomap_foreach_cb *cb, void *data) {
+  const size_t key_size = map->keys.size, val_size = map->vals.size;
+  if (val_size)
+    for (size_t i=0; i<map->map.len; i++)
+      cb(map, data, map->keys.arr + key_size * map->map.arr[i],
+                    map->vals.arr + val_size * map->map.arr[i]);
+  else
+    for (size_t i=0; i<map->map.len; i++)
+      cb(map, data, map->keys.arr + key_size * map->map.arr[i], NULL);
+}

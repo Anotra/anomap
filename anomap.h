@@ -70,4 +70,8 @@ size_t anomap_delete_range(struct anomap *map,
                            size_t from_index, size_t to_index,
                            void *keys, void *vals);
 
+typedef void anomap_foreach_cb(struct anomap *map, void *data,
+                               const void *key, const void *val);
+void anomap_foreach(struct anomap *map, anomap_foreach_cb *cb, void *data);
+
 #endif // !ANOMAP_H
