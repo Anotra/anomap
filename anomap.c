@@ -331,3 +331,8 @@ anomap_foreach(struct anomap *map, anomap_foreach_cb *cb, void *data) {
     for (size_t i=0; i<map->map.len; i++)
       cb(map, data, map->keys.arr + key_size * map->map.arr[i], NULL);
 }
+
+int
+anomap_cmp_str(const void *a, const void *b) {
+  return strcmp(*(char **)a, *(char **)b);
+}

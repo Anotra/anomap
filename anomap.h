@@ -74,4 +74,6 @@ typedef void anomap_foreach_cb(struct anomap *map, void *data,
                                const void *key, const void *val);
 void anomap_foreach(struct anomap *map, anomap_foreach_cb *cb, void *data);
 
+int anomap_cmp_str(const void *a, const void *b);
+
 #endif // !ANOMAP_H
