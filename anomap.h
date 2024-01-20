@@ -18,7 +18,8 @@
   }
 
 enum anomap_options {
-  anomap_reverse_order = 1,
+  anomap_reverse_order = 1 << 0,
+  anomap_direct_access = 1 << 1,
 };
 
 enum anomap_operation {
@@ -58,6 +59,8 @@ void anomap_clear(struct anomap *map);
 bool anomap_contains(struct anomap *map, void *key);
 bool anomap_index_of(struct anomap *map, void *key, size_t *index);
 bool anomap_at_index(struct anomap *map, size_t index, void *key, void *val);
+const void *anomap_direct_key_at_index(struct anomap *map, size_t index);
+void *anomap_direct_val_at_index(struct anomap *map, size_t index);
 
 enum anomap_operation anomap_do(struct anomap *map,
                                 enum anomap_operation operation,

@@ -134,6 +134,27 @@ anomap_at_index(struct anomap *map, size_t index, void *key, void *val) {
   return true;
 }
 
+
+const void *
+anomap_direct_key_at_index(struct anomap *map, size_t index) {
+  if (!(map->options & anomap_direct_access))
+    return NULL;
+  if (index >= map->map.len)
+    return NULL;
+  return map->keys.arr + map->keys.size * map->map.arr[index];
+}
+
+void *
+anomap_direct_val_at_index(struct anomap *map, size_t index) {
+  if (!(map->options & anomap_direct_access))
+    return NULL;
+  if (index >= map->map.len)
+    return NULL;
+  if (!map->vals.size)
+    return NULL;
+  return map->vals.arr + map->vals.size * map->map.arr[index];
+}
+
 static bool
 _anomap_ensure_capacity(struct anomap *map, size_t capacity) {
   if (capacity > ~(unsigned)0) return false;
