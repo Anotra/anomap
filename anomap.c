@@ -34,8 +34,10 @@ anomap_create(size_t key_size, size_t val_size,
               int (*cmp)(const void *, const void *),
               enum anomap_options options)
 {
-  struct anomap *map = calloc(1, sizeof *map);
-  if (map) {
+  struct anomap *map;
+  if (!key_size || !cmp)
+    return NULL;
+  if ((map = calloc(1, sizeof *map))) {
     map->options = options;
     map->cmp = cmp;
     map->keys.size = key_size;
