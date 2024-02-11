@@ -126,6 +126,7 @@ anomap_index_of(struct anomap *map, void *key, size_t *position) {
 
   if (0 == map->map.len) goto on_empty;
   result = map->cmp(key, keys + key_size * map->map.arr[map->map.len - 1]);
+  if (0 == result) return *position = map->map.len - 1, true;
 
 # define BINARY_SEARCH(cmp_operator)                                          \
   if (result cmp_operator 0)                                                  \
