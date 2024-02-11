@@ -209,12 +209,12 @@ _anomap_ensure_capacity(struct anomap *map, size_t capacity) {
   return true;
 }
 
-enum anomap_operation
-anomap_do(struct anomap *map, enum anomap_operation operation,
+anomap_operation
+anomap_do(struct anomap *map, anomap_operation operation,
           void *key, void *val)
 {
   const size_t key_size = map->keys.size, val_size = map->vals.size;
-  enum anomap_operation result = 0;
+  anomap_operation result = 0;
   size_t mpos = 0;
   if (!anomap_index_of(map, key, &mpos)) {
     if (!(operation & anomap_insert))

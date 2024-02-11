@@ -22,13 +22,13 @@ enum anomap_options {
   anomap_direct_access = 1 << 1,
 };
 
-enum anomap_operation {
+typedef enum anomap_operation {
   anomap_insert = 1 << 0,
   anomap_update = 1 << 1,
   anomap_upsert = anomap_insert | anomap_update,
   anomap_delete = 1 << 2,
   anomap_getval = 1 << 3,
-};
+} anomap_operation;
 
 struct anomap;
 
@@ -69,9 +69,9 @@ bool anomap_at_index(struct anomap *map, size_t index, void *key, void *val);
 const void *anomap_direct_key_at_index(struct anomap *map, size_t index);
 void *anomap_direct_val_at_index(struct anomap *map, size_t index);
 
-enum anomap_operation anomap_do(struct anomap *map,
-                                enum anomap_operation operation,
-                                void *key, void *val);
+anomap_operation anomap_do(struct anomap *map,
+                           anomap_operation operation,
+                           void *key, void *val);
 
 size_t anomap_copy_range(struct anomap *map,
                          size_t from_index, size_t to_index,
