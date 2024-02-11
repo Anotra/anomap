@@ -14,6 +14,7 @@
 struct anomap {
   int (*cmp)(const void *, const void *);
   enum anomap_options options;
+  bool free_on_cleanup;
   struct {
     anomap_on_item_changed *cb;
     void *data;
@@ -33,22 +34,38 @@ struct anomap {
   } vals;
 };
 
+
+size_t
+anomap_struct_size(void) {
+  return sizeof(struct anomap);
+}
+
+bool
+anomap_init(struct anomap *map,
+            size_t key_size, size_t val_size,
+            int (*cmp)(const void *, const void *),
+            enum anomap_options options)
+{
+  if (!key_size || !cmp || (options & ~ANOMAP_ALLOWED_OPTIONS))
+    return false;
+  map->free_on_cleanup = false;
+  map->options = options;
+  map->cmp = cmp;
+  map->keys.size = key_size;
+  map->vals.size = val_size;
+  return true;
+}
+
 struct anomap *
 anomap_create(size_t key_size, size_t val_size,
               int (*cmp)(const void *, const void *),
               enum anomap_options options)
 {
-  struct anomap *map;
-  if (!key_size || !cmp || (options & ~ANOMAP_ALLOWED_OPTIONS))
-    return NULL;
-  if ((map = calloc(1, sizeof *map))) {
-    map->options = options;
-    map->cmp = cmp;
-    map->keys.size = key_size;
-    map->vals.size = val_size;
-    return map;
-  }
-  return NULL;
+  struct anomap *map = calloc(1, sizeof *map);
+  if (!map) return NULL;
+  if (anomap_init(map, key_size, val_size, cmp, options))
+    return map->free_on_cleanup = true, map;
+  return free(map), NULL;
 }
 
 void
@@ -57,8 +74,10 @@ anomap_destroy(struct anomap *map) {
   free(map->keys.arr);
   free(map->vals.arr);
   free(map->map.arr);
+  const bool free_on_cleanup = map->free_on_cleanup;
   memset(map, 0, sizeof *map);
-  free(map);
+  if (free_on_cleanup)
+    free(map);
 }
 
 void

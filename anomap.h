@@ -32,6 +32,13 @@ enum anomap_operation {
 
 struct anomap;
 
+size_t anomap_struct_size(void);
+
+bool anomap_init(struct anomap *map,
+                 size_t key_size, size_t val_size,
+                 int (*cmp)(const void *, const void *),
+                 enum anomap_options options);
+
 struct anomap *anomap_create(size_t key_size, size_t val_size,
                              int (*cmp)(const void *, const void *),
                              enum anomap_options options);
