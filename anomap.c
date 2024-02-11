@@ -48,6 +48,7 @@ anomap_init(struct anomap *map,
 {
   if (!key_size || !cmp || (options & ~ANOMAP_ALLOWED_OPTIONS))
     return false;
+  memset(map, 0, sizeof *map);
   map->free_on_cleanup = false;
   map->options = options;
   map->cmp = cmp;
