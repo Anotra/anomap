@@ -182,7 +182,7 @@ anomap_direct_val_at_index(struct anomap *map, size_t index) {
 
 static bool
 _anomap_ensure_capacity(struct anomap *map, size_t capacity) {
-  if (capacity > ~(unsigned)0) return false;
+  if (capacity > (size_t)1 << 31) return false;
   if (capacity <= map->map.cap) return true;
   size_t cap = map->map.cap ? map->map.cap << 1 : 8;
   while (cap < capacity) cap <<= 1;
@@ -199,7 +199,7 @@ _anomap_ensure_capacity(struct anomap *map, size_t capacity) {
     map->vals.cap = cap;
   }
   if (map->map.cap < cap) {
-    unsigned *tmp = realloc(map->map.arr, sizeof *map->map.arr * cap);
+    void *tmp = realloc(map->map.arr, sizeof *map->map.arr * cap);
     if (!tmp) return false;
     map->map.arr = tmp;
     map->map.cap = cap;
