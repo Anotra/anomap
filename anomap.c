@@ -7,6 +7,10 @@
 
 #include "anomap.h"
 
+#define ANOMAP_ALLOWED_OPTIONS ( anomap_reverse_order              \
+                               | anomap_direct_access              \
+                               )
+
 struct anomap {
   int (*cmp)(const void *, const void *);
   enum anomap_options options;
@@ -35,7 +39,7 @@ anomap_create(size_t key_size, size_t val_size,
               enum anomap_options options)
 {
   struct anomap *map;
-  if (!key_size || !cmp)
+  if (!key_size || !cmp || (options & ~ANOMAP_ALLOWED_OPTIONS))
     return NULL;
   if ((map = calloc(1, sizeof *map))) {
     map->options = options;
@@ -70,7 +74,8 @@ anomap_length(struct anomap *map) {
   return map->map.len;
 }
 
-void anomap_clear(struct anomap *map) {
+void
+anomap_clear(struct anomap *map) {
   for (size_t i = 0; i < map->map.len; i++) {
     if (!map->on_changed.cb) break;
     unsigned pos = map->map.arr[i];
@@ -135,7 +140,6 @@ anomap_at_index(struct anomap *map, size_t index, void *key, void *val) {
   if (val) memcpy(val, map->vals.arr + val_size * pos, val_size);
   return true;
 }
-
 
 const void *
 anomap_direct_key_at_index(struct anomap *map, size_t index) {
