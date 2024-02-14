@@ -187,25 +187,25 @@ _anomap_ensure_capacity(struct anomap *map, size_t capacity) {
   if (capacity > (size_t)1 << 31) return false;
   if (capacity <= map->map.cap) return true;
   size_t cap = map->map.cap ? map->map.cap << 1 : 8;
-  while (cap < capacity) cap <<= 1;
-  if (map->keys.cap < cap) {
-    void *tmp = realloc(map->keys.arr, map->keys.size * cap);
-    if (!tmp) return false;
-    map->keys.arr = tmp;
-    map->keys.cap = cap;
-  }
-  if (map->vals.size && map->vals.cap < cap) {
-    void *tmp = realloc(map->vals.arr, map->vals.size * cap);
-    if (!tmp) return false;
-    map->vals.arr = tmp;
-    map->vals.cap = cap;
-  }
-  if (map->map.cap < cap) {
-    void *tmp = realloc(map->map.arr, sizeof *map->map.arr * cap);
-    if (!tmp) return false;
-    map->map.arr = tmp;
-    map->map.cap = cap;
-  }
+  while (cap < capacity) if (0 == (cap <<= 1)) return false;
+
+#define RESIZE_ARRAY(ARRAY, ELEMENT_SIZE, CAPACITY, NEW_CAPACITY)   \
+  do {                                                              \
+    if (CAPACITY < NEW_CAPACITY) {                                  \
+      void *tmp = realloc(ARRAY, (ELEMENT_SIZE) * (NEW_CAPACITY));  \
+      if (!tmp) return false;                                       \
+      ARRAY = tmp;                                                  \
+      CAPACITY = NEW_CAPACITY;                                      \
+    }                                                               \
+  } while (0)
+
+  RESIZE_ARRAY(map->map.arr, sizeof *map->map.arr, map->map.cap, cap);
+
+  RESIZE_ARRAY(map->keys.arr, map->keys.size, map->keys.cap, cap);
+
+  if (map->vals.size)
+    RESIZE_ARRAY(map->vals.arr, map->vals.size, map->vals.cap, cap);
+
   return true;
 }
 
