@@ -17,37 +17,48 @@
     return *(data_type *)a > *(data_type *)b ? 1 : -1;                        \
   }
 
-enum anomap_options {
-  anomap_reverse_order = 1 << 0,
-  anomap_direct_access = 1 << 1,
-};
+typedef enum {
+#define ANOMAP_REVERSE_ORDER  anomap_reverse_order
+  anomap_reverse_order        = 1 << 0,
+#define ANOMAP_DIRECT_ACCESS  anomap_direct_access
+  anomap_direct_access        = 1 << 1,
+#define ANOMAP_PRESERVE_ORDER anomap_preserve_order
+  anomap_preserve_order       = 1 << 2,
+} anomap_options;
 
-typedef enum anomap_operation {
+typedef enum {
+#define ANOMAP_INSERT anomap_insert
   anomap_insert = 1 << 0,
+#define ANOMAP_UPDATE anomap_update
   anomap_update = 1 << 1,
+#define ANOMAP_UPSERT anomap_upsert
   anomap_upsert = anomap_insert | anomap_update,
+#define ANOMAP_DELETE anomap_delete
   anomap_delete = 1 << 2,
+#define ANOMAP_GETVAL anomap_getval
   anomap_getval = 1 << 3,
 } anomap_operation;
 
 struct anomap;
+
+anomap_options anomap_supported_options(void);
 
 size_t anomap_struct_size(void);
 
 bool anomap_init(struct anomap *map,
                  size_t key_size, size_t val_size,
                  int (*cmp)(const void *, const void *),
-                 enum anomap_options options);
+                 anomap_options options);
 
 struct anomap *anomap_create(size_t key_size, size_t val_size,
                              int (*cmp)(const void *, const void *),
-                             enum anomap_options options);
+                             anomap_options options);
 void anomap_destroy(struct anomap *map);
 
 struct anomap_item_changed {
   struct anomap *map;
   void *data;
-  enum anomap_operation op;
+  anomap_operation op;
   void *key;
   struct {
     void *prev;
@@ -83,6 +94,21 @@ size_t anomap_delete_range(struct anomap *map,
 typedef void anomap_foreach_cb(struct anomap *map, void *data,
                                const void *key, const void *val);
 void anomap_foreach(struct anomap *map, anomap_foreach_cb *cb, void *data);
+
+typedef enum {
+#define ANOMAP_HEAD anomap_head
+  anomap_head,
+#define ANOMAP_TAIL anomap_tail
+  anomap_tail,
+#define ANOMAP_PREV anomap_prev
+  anomap_prev,
+#define ANOMAP_NEXT anomap_next
+  anomap_next,
+} anomap_position;
+
+bool anomap_advance(struct anomap *map, 
+                    size_t *index, 
+                    anomap_position *position);
 
 int anomap_cmp_str(const void *a, const void *b);
 

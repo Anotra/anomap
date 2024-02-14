@@ -9,11 +9,12 @@
 
 #define ANOMAP_ALLOWED_OPTIONS ( anomap_reverse_order              \
                                | anomap_direct_access              \
+                               | anomap_preserve_order             \
                                )
 
 struct anomap {
   int (*cmp)(const void *, const void *);
-  enum anomap_options options;
+  anomap_options options;
   bool free_on_cleanup;
   struct {
     anomap_on_item_changed *cb;
@@ -21,19 +22,30 @@ struct anomap {
   } on_changed;
   struct {
     unsigned *arr;
-    size_t len, cap;
+    size_t len : 32, cap : 32;
     size_t highest;
   } map;
   struct {
     char *arr;
-    size_t cap, size;
+    size_t cap : 32, size : 32;
   } keys;
   struct {
     char *arr;
-    size_t cap, size;
+    size_t cap : 32, size : 32;
   } vals;
+  struct {
+    struct {
+      unsigned prev, next;
+    } *arr;
+    size_t cap : 32;
+    unsigned tail;
+  } order;
 };
 
+anomap_options
+anomap_supported_options(void) {
+  return ANOMAP_ALLOWED_OPTIONS;
+}
 
 size_t
 anomap_struct_size(void) {
@@ -44,7 +56,7 @@ bool
 anomap_init(struct anomap *map,
             size_t key_size, size_t val_size,
             int (*cmp)(const void *, const void *),
-            enum anomap_options options)
+            anomap_options options)
 {
   if (!key_size || !cmp || (options & ~ANOMAP_ALLOWED_OPTIONS))
     return false;
@@ -60,7 +72,7 @@ anomap_init(struct anomap *map,
 struct anomap *
 anomap_create(size_t key_size, size_t val_size,
               int (*cmp)(const void *, const void *),
-              enum anomap_options options)
+              anomap_options options)
 {
   struct anomap *map = calloc(1, sizeof *map);
   if (!map) return NULL;
@@ -72,9 +84,10 @@ anomap_create(size_t key_size, size_t val_size,
 void
 anomap_destroy(struct anomap *map) {
   anomap_clear(map);
+  free(map->map.arr);
   free(map->keys.arr);
   free(map->vals.arr);
-  free(map->map.arr);
+  free(map->order.arr);
   const bool free_on_cleanup = map->free_on_cleanup;
   memset(map, 0, sizeof *map);
   if (free_on_cleanup)
@@ -94,8 +107,19 @@ anomap_length(struct anomap *map) {
   return map->map.len;
 }
 
+static inline void
+_anomap_on_empty(struct anomap *map) {
+  if (map->map.len) return;
+  if (map->options & anomap_preserve_order)
+    map->order.tail = map->order.arr[0].next = map->order.arr[0].prev = 0;
+  map->map.highest = 0;
+}
+
 void
 anomap_clear(struct anomap *map) {
+  if (0 == map->map.len)
+    return;
+
   for (size_t i = 0; i < map->map.len; i++) {
     if (!map->on_changed.cb) break;
     unsigned pos = map->map.arr[i];
@@ -109,7 +133,7 @@ anomap_clear(struct anomap *map) {
       });
   }
   map->map.len = 0;
-  map->map.highest = 0;
+  _anomap_on_empty(map);
 }
 
 bool
@@ -189,14 +213,16 @@ _anomap_ensure_capacity(struct anomap *map, size_t capacity) {
   size_t cap = map->map.cap ? map->map.cap << 1 : 8;
   while (cap < capacity) if (0 == (cap <<= 1)) return false;
 
-#define RESIZE_ARRAY(ARRAY, ELEMENT_SIZE, CAPACITY, NEW_CAPACITY)   \
-  do {                                                              \
-    if (CAPACITY < NEW_CAPACITY) {                                  \
-      void *tmp = realloc(ARRAY, (ELEMENT_SIZE) * (NEW_CAPACITY));  \
-      if (!tmp) return false;                                       \
-      ARRAY = tmp;                                                  \
-      CAPACITY = NEW_CAPACITY;                                      \
-    }                                                               \
+#define RESIZE_ARRAY(ARRAY, ELEMENT_SIZE, CAPACITY, NEW_CAPACITY)         \
+  do {                                                                    \
+    if (CAPACITY < NEW_CAPACITY) {                                        \
+      void *tmp =     /* use calloc initially to be safe */               \
+        0 == CAPACITY ? calloc((NEW_CAPACITY), (ELEMENT_SIZE))            \
+                      : realloc(ARRAY, (NEW_CAPACITY) *(ELEMENT_SIZE));   \
+      if (!tmp) return false;                                             \
+      ARRAY = tmp;                                                        \
+      CAPACITY = NEW_CAPACITY;                                            \
+    }                                                                     \
   } while (0)
 
   RESIZE_ARRAY(map->map.arr, sizeof *map->map.arr, map->map.cap, cap);
@@ -206,7 +232,24 @@ _anomap_ensure_capacity(struct anomap *map, size_t capacity) {
   if (map->vals.size)
     RESIZE_ARRAY(map->vals.arr, map->vals.size, map->vals.cap, cap);
 
+  if (map->options & anomap_preserve_order)
+    RESIZE_ARRAY(map->order.arr, sizeof *map->order.arr, map->order.cap, cap);
+
   return true;
+}
+
+static void
+_unlink_element(struct anomap *map, unsigned pos) {
+  if (0 == map->map.len) {
+    map->order.tail = map->order.arr[0].next = map->order.arr[0].prev = 0;
+  } else {
+    const unsigned prev = map->order.arr[pos].prev;
+    const unsigned next = map->order.arr[pos].next;
+    map->order.arr[next].prev = prev;
+    map->order.arr[prev].next = next;
+    if (map->order.tail == pos)
+      map->order.tail = prev;
+  }
 }
 
 anomap_operation
@@ -234,6 +277,15 @@ anomap_do(struct anomap *map, anomap_operation operation,
               sizeof *map->map.arr * (map->map.len - mpos));
     map->map.arr[mpos] = pos;
     map->map.len++;
+  
+    if (map->options & anomap_preserve_order) {
+      unsigned tail = map->order.tail;
+      unsigned head = map->order.arr[tail].next;
+      map->order.arr[map->order.arr[pos].prev = tail].next = pos;
+      map->order.arr[map->order.arr[pos].next = head].prev = pos;
+      map->order.tail = pos;
+    }
+
     result |= anomap_insert;
     if (map->on_changed.cb)
       map->on_changed.cb(
@@ -302,6 +354,9 @@ anomap_do(struct anomap *map, anomap_operation operation,
       memmove(map->map.arr + mpos, map->map.arr + mpos + 1,
               sizeof *map->map.arr * (map->map.len - mpos));
     map->map.arr[map->map.len] = pos;
+    if (map->options & anomap_preserve_order)
+      _unlink_element(map, pos);
+    _anomap_on_empty(map);
   }
   return result;
 }
@@ -338,6 +393,11 @@ anomap_delete_range(struct anomap *map, size_t from_index, size_t to_index,
   size_t count = anomap_copy_range(map, from_index, to_index, keys, vals);
   if (!count) return 0;
   const int next = from_index <= to_index ? 1 : -1;
+  if (map->options & anomap_preserve_order)
+    for (size_t i = from_index;; i += next) {
+      _unlink_element(map, map->map.arr[i]);
+      if (i == to_index) break;
+    }
   for (size_t i = from_index;; i += next) {
     if (!map->on_changed.cb) break;
     unsigned pos = map->map.arr[i];
@@ -365,19 +425,99 @@ anomap_delete_range(struct anomap *map, size_t from_index, size_t to_index,
     memcpy(map->map.arr + map->map.len, tmp, copy_size);
     remaining -= block;
   }
+  _anomap_on_empty(map);
   return count;
 }
 
 void
 anomap_foreach(struct anomap *map, anomap_foreach_cb *cb, void *data) {
   const size_t key_size = map->keys.size, val_size = map->vals.size;
-  if (val_size)
-    for (size_t i=0; i<map->map.len; i++)
-      cb(map, data, map->keys.arr + key_size * map->map.arr[i],
-                    map->vals.arr + val_size * map->map.arr[i]);
-  else
-    for (size_t i=0; i<map->map.len; i++)
-      cb(map, data, map->keys.arr + key_size * map->map.arr[i], NULL);
+  if (0 == map->map.len)
+    return;
+  if (map->options & anomap_preserve_order) {
+    const unsigned tail = map->order.tail;
+    unsigned pos = map->order.arr[tail].next;
+    switch (val_size ? 1 : 0) {
+      while (tail != pos) {
+        pos = map->order.arr[pos].next;
+        case 1:
+        cb(map, data, map->keys.arr + key_size * pos,
+                      map->vals.arr + val_size * pos);
+      } break;
+
+      while (tail != pos) {
+        pos = map->order.arr[pos].next;
+        case 0:
+        cb(map, data, map->keys.arr + key_size * pos, NULL);
+      } break;
+    }
+  } else {
+    if (val_size) {
+      for (size_t i=0; i<map->map.len; i++)
+        cb(map, data, map->keys.arr + key_size * map->map.arr[i],
+                      map->vals.arr + val_size * map->map.arr[i]);
+    } else {
+      for (size_t i=0; i<map->map.len; i++)
+        cb(map, data, map->keys.arr + key_size * map->map.arr[i], NULL);
+    }
+  } 
+}
+
+bool
+anomap_advance(struct anomap *map, size_t *index, anomap_position *position) {
+  unsigned pos;
+  if (0 == map->map.len)
+    return false;
+  if (map->options & anomap_preserve_order) {
+    switch (*position) {
+      case anomap_head:
+        pos = map->order.arr[map->order.tail].next;
+        anomap_index_of(map, map->keys.arr + map->keys.size * pos, index);
+        *position = anomap_next;
+        return true;
+      case anomap_tail:
+        pos = map->order.tail;
+        anomap_index_of(map, map->keys.arr + map->keys.size * pos, index);
+        *position = anomap_prev;
+        return true;
+      case anomap_next:
+        pos = map->map.arr[*index];
+        if (pos == map->order.tail)
+          return false;
+        pos = map->order.arr[pos].next;
+        anomap_index_of(map, map->keys.arr + map->keys.size * pos, index);
+        return true;
+      case anomap_prev:
+        pos = map->map.arr[*index];
+        if (pos == map->order.arr[map->order.tail].next)
+          return false;
+        pos = map->order.arr[pos].prev;
+        anomap_index_of(map, map->keys.arr + map->keys.size * pos, index);
+        return true;
+    }
+  } else {
+    switch (*position) {
+      case anomap_head:
+        *index = 0;
+        *position = anomap_next;
+        return true;
+      case anomap_tail:
+        *index = map->map.len - 1;
+        *position = anomap_prev;
+        return true;
+      case anomap_next:
+        if (*index >= map->map.len - 1)
+          return false;
+        (*index)++;
+        return true;
+      case anomap_prev:
+        if (0 == *index)
+          return false;
+        (*index)--;
+        return true;
+    }
+  }
+  return false;
 }
 
 int
