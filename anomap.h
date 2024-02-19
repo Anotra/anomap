@@ -24,6 +24,8 @@ typedef enum {
   anomap_direct_access        = 1 << 1,
 #define ANOMAP_PRESERVE_ORDER anomap_preserve_order
   anomap_preserve_order       = 1 << 2,
+#define ANOMAP_USE_LOCK       anomap_use_lock
+  anomap_use_lock             = 1 << 3,
 } anomap_options;
 
 typedef enum {
