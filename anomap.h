@@ -10,6 +10,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+__BEGIN_DECLS
+
 #define ANOMAP_DECLARE_COMPARE_FUNCTION(function_name, data_type)             \
   static int                                                                  \
   function_name(const void *a, const void *b) {                               \
@@ -115,5 +117,7 @@ bool anomap_advance(struct anomap *map,
                     anomap_position *position);
 
 int anomap_cmp_str(const void *a, const void *b);
+
+__END_DECLS
 
 #endif // !ANOMAP_H
