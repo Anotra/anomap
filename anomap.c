@@ -324,6 +324,65 @@ anomap_destroy(struct anomap *map) {
     free(map);
 }
 
+struct anomap *
+anomap_clone(struct anomap *map, anomap_clone_options options) {
+  if (options) return NULL;
+  struct anomap *clone = malloc(sizeof *clone);
+  struct {
+    void *ptrs[16];
+    size_t len;
+  } cleanup = { 0 };
+  if (!clone) return NULL;
+
+  LOCK_R_ACQUIRE;
+  memcpy(clone, map, sizeof *clone);
+  clone->free_on_cleanup = true;
+
+  if (!(clone->lock.lock = clone->lock.functions->create()))
+    goto lock_create_fail;
+  
+#define CLONE_ARRAY(ARRAY, SIZE)                      \
+  do {                                                \
+    if ((clone->ARRAY.arr = malloc(SIZE))) {          \
+      memcpy(clone->ARRAY.arr, map->ARRAY.arr, SIZE); \
+      cleanup.ptrs[cleanup.len++] = clone->ARRAY.arr; \
+    } else goto array_copy_fail;                      \
+  } while (0)
+
+  if (clone->map.len) {
+    CLONE_ARRAY(map, clone->map.cap * sizeof *clone->map.arr);
+    CLONE_ARRAY(keys, clone->keys.cap * clone->keys.size);
+    if (clone->vals.size)
+      CLONE_ARRAY(vals, clone->vals.cap * clone->vals.size);
+    if (clone->options & anomap_preserve_order)
+      CLONE_ARRAY(order, clone->order.cap * sizeof *clone->order.arr);
+  }
+
+  LOCK_R_RELEASE;
+  return clone;
+
+  array_copy_fail:
+  while (cleanup.len)
+    free(cleanup.ptrs[--cleanup.len]);
+  clone->lock.functions->destroy(clone->lock.lock);
+  lock_create_fail:
+  LOCK_R_RELEASE;
+  free(clone);
+  return NULL;
+}
+
+void
+anomap_move(struct anomap *dest, bool free_on_destroy, struct anomap *map) {
+  LOCK_W_ACQUIRE;
+  memcpy(dest, map, sizeof *dest);
+  bool free_map = map->free_on_cleanup;
+  dest->free_on_cleanup = free_on_destroy;
+  memset(map, 0, sizeof *map);
+  if (free_map) free(map);
+  map = dest;
+  LOCK_W_RELEASE;
+}
+
 void
 anomap_set_on_item_changed(
   struct anomap *map, anomap_on_item_changed *on_changed, void *data)
