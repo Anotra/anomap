@@ -81,7 +81,6 @@ static const struct anomap_lock null_lock = {
 static unsigned anomap_has_locks =
 #if !defined ANOMAP_NATIVE_LOCKS || ANOMAP_NATIVE_LOCKS == NATIVE_LOCK_NONE
   0;
-  static const struct anomap_lock lock_functions = null_lock;
 #else
   anomap_use_lock;
 
@@ -288,9 +287,13 @@ anomap_init(struct anomap *map,
   map->cmp = cmp;
   map->keys.size = key_size;
   map->vals.size = val_size;
+#if !defined ANOMAP_NATIVE_LOCKS || ANOMAP_NATIVE_LOCKS == NATIVE_LOCK_NONE
+  map->lock.functions = &null_lock;
+#else
   map->lock.functions = options & anomap_use_lock
                       ? &lock_functions
                       : &null_lock;
+#endif
   if ((map->lock.lock = map->lock.functions->create()))
     return true;
 
