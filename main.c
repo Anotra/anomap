@@ -70,6 +70,16 @@ int main() {
       printf("iterating: %i\n", key);
     }
 
+    // another way to iterate
+    size_t index;
+    bool from_start = false;
+    anomap_position position = from_start ? anomap_head : anomap_tail;
+    while (anomap_advance(map, &index, &position)) {
+      int key;
+      anomap_at_index(map, index, &key, NULL);
+      printf("anomap_advance: %i\n", key);
+    }
+
     // clear the map of all items
     anomap_clear(map);
 
