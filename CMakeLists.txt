@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.13)
 
 enable_language(C)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
 
 option(WITH_LOCKS "add lock support if available" ON)
 option(BUILD_TESTS "enable testing" ON)
+
+if (WITH_LOCKS AND NOT WIN32)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+endif()
 
 project(anomap VERSION 1.0.0 LANGUAGES C)
 add_library(${PROJECT_NAME} SHARED anomap.c)
