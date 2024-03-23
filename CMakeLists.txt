@@ -4,6 +4,7 @@ enable_language(C)
 
 option(WITH_LOCKS "add lock support if available" ON)
 option(BUILD_TESTS "enable testing" ON)
+option(SHARED "build shared library(off for static library)" ON)
 
 if (WITH_LOCKS AND NOT WIN32)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -11,7 +12,14 @@ if (WITH_LOCKS AND NOT WIN32)
 endif()
 
 project(anomap VERSION 1.0.0 LANGUAGES C)
-add_library(${PROJECT_NAME} SHARED anomap.c)
+if (SHARED)
+  add_library(${PROJECT_NAME} SHARED)
+else()
+  add_library(${PROJECT_NAME} STATIC)
+endif()
+target_sources(${PROJECT_NAME} PRIVATE
+  anomap.c
+)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 set_target_properties(${PROJECT_NAME} PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON)
 if (NOT WITH_LOCKS)
