@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 enable_language(C)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 option(WITH_LOCKS "add lock support if available" ON)
 option(BUILD_TESTS "enable testing" ON)
 option(SHARED "build shared library(off for static library)" ON)
