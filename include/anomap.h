@@ -22,27 +22,34 @@ extern "C" {
   }
 
 typedef enum {
-#define ANOMAP_REVERSE_ORDER  anomap_reverse_order
-  anomap_reverse_order        = 1 << 0,
-#define ANOMAP_DIRECT_ACCESS  anomap_direct_access
-  anomap_direct_access        = 1 << 1,
-#define ANOMAP_PRESERVE_ORDER anomap_preserve_order
-  anomap_preserve_order       = 1 << 2,
-#define ANOMAP_USE_LOCK       anomap_use_lock
-  anomap_use_lock             = 1 << 3,
+  #define ANOMAP_REVERSE_ORDER           anomap_reverse_order
+          anomap_reverse_order         = 1 << 0,
+
+  #define ANOMAP_DIRECT_ACCESS           anomap_direct_access
+          anomap_direct_access         = 1 << 1,
+
+  #define ANOMAP_PRESERVE_ORDER          anomap_preserve_order
+          anomap_preserve_order        = 1 << 2,
+
+  #define ANOMAP_USE_LOCK                anomap_use_lock
+          anomap_use_lock              = 1 << 3,
 } anomap_options;
 
 typedef enum {
-#define ANOMAP_INSERT anomap_insert
-  anomap_insert = 1 << 0,
-#define ANOMAP_UPDATE anomap_update
-  anomap_update = 1 << 1,
-#define ANOMAP_UPSERT anomap_upsert
-  anomap_upsert = anomap_insert | anomap_update,
-#define ANOMAP_DELETE anomap_delete
-  anomap_delete = 1 << 2,
-#define ANOMAP_GETVAL anomap_getval
-  anomap_getval = 1 << 3,
+  #define ANOMAP_INSERT   anomap_insert
+          anomap_insert = 1 << 0,
+
+  #define ANOMAP_UPDATE   anomap_update
+          anomap_update = 1 << 1,
+
+  #define ANOMAP_UPSERT   anomap_upsert
+          anomap_upsert = anomap_insert | anomap_update,
+
+  #define ANOMAP_DELETE   anomap_delete
+          anomap_delete = 1 << 2,
+
+  #define ANOMAP_GETVAL   anomap_getval
+          anomap_getval = 1 << 3,
 } anomap_operation;
 
 struct anomap;
@@ -62,8 +69,8 @@ struct anomap *anomap_create(size_t key_size, size_t val_size,
 void anomap_destroy(struct anomap *map);
 
 typedef enum {
-#define ANOMAP_CLONE_OPTIONS_NONE anomap_clone_options_none
-  anomap_clone_options_none,
+  #define ANOMAP_CLONE_OPTIONS_NONE anomap_clone_options_none
+          anomap_clone_options_none,
 } anomap_clone_options;
 
 struct anomap *anomap_clone(struct anomap *map, anomap_clone_options options);
@@ -112,13 +119,16 @@ void anomap_foreach_reverse(struct anomap *map,
 
 typedef enum {
 #define ANOMAP_HEAD anomap_head
-  anomap_head,
+        anomap_head,
+
 #define ANOMAP_TAIL anomap_tail
-  anomap_tail,
+        anomap_tail,
+
 #define ANOMAP_PREV anomap_prev
-  anomap_prev,
+        anomap_prev,
+
 #define ANOMAP_NEXT anomap_next
-  anomap_next,
+        anomap_next,
 } anomap_position;
 
 bool anomap_advance(struct anomap *map, 
