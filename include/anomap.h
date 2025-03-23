@@ -50,7 +50,7 @@ typedef enum {
 
   #define ANOMAP_GETVAL   anomap_getval
           anomap_getval = 1 << 3,
-} anomap_operation;
+} anomap_operation, anomap_op;
 
 typedef struct anomap anomap;
 
@@ -104,6 +104,12 @@ void *anomap_direct_val_at_index(anomap *map, size_t index);
 anomap_operation anomap_do(anomap *map,
                            anomap_operation operation,
                            void *key, void *val);
+
+anomap_operation anomap_do_insert(anomap *map, void *key, void *val);
+anomap_operation anomap_do_update(anomap *map, void *key, void *val);
+anomap_operation anomap_do_upsert(anomap *map, void *key, void *val);
+anomap_operation anomap_do_delete(anomap *map, void *key);
+anomap_operation anomap_do_getval(anomap *map, void *key, void *val);
 
 size_t anomap_copy_range(anomap *map,
                          size_t from_index, size_t to_index,

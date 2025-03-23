@@ -702,6 +702,22 @@ anomap_do(anomap *map, anomap_operation operation, void *key, void *val) {
   return result;
 }
 
+#define ANOMAP_DO_OPERATION(operation)                          \
+  anomap_operation                                              \
+  anomap_do_ ## operation(anomap *map, void *key, void *val) {  \
+    return anomap_do(map, anomap_ ## operation, key, val);      \
+  }
+
+ANOMAP_DO_OPERATION(insert)
+ANOMAP_DO_OPERATION(update)
+ANOMAP_DO_OPERATION(upsert)
+ANOMAP_DO_OPERATION(getval)
+
+anomap_operation
+anomap_do_delete(anomap *map, void *key) {
+  return anomap_do(map, anomap_delete, key, NULL);
+}
+
 static size_t
 anomap_copy_range_no_lock(anomap *map, 
                           size_t from_index, size_t to_index,
